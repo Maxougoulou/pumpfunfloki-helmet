@@ -9,18 +9,11 @@ export const runtime = "nodejs";
 const PROMPT =
   "Add this helmet to the character, keep original pixels untouched except for the helmet overlay. Ensure the helmet fits the head with correct size & angle.";
 
-function b64ToBytes(b64: string) {
-  return new Uint8Array(Buffer.from(b64, "base64"));
-}
-
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "Missing OPENAI_API_KEY" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Missing OPENAI_API_KEY" }, { status: 500 });
     }
 
     const formData = await req.formData();
@@ -28,22 +21,15 @@ export async function POST(req: Request) {
     const n = Math.max(1, Math.min(4, Number(formData.get("n") || 1)));
 
     if (!userImage) {
-      return NextResponse.json(
-        { error: "No image uploaded" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No image uploaded" }, { status: 400 });
     }
 
     // charger le casque
-    const helmetPath = path.join(
-      process.cwd(),
-      "public",
-      "assets",
-      "helmet.png"
-    );
+    const helmetPath = path.join(process.cwd(), "public", "assets", "helmet.png");
     const helmetBytes = await readFile(helmetPath);
     const helmetBlob = new Blob([helmetBytes], { type: "image/png" });
 
+    // appeler OpenAI images edits
     const fd = new FormData();
     fd.append("model", "gpt-image-1");
     fd.append("prompt", PROMPT);
@@ -54,44 +40,37 @@ export async function POST(req: Request) {
 
     const res = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { Authorization: `Bearer ${apiKey}` },
       body: fd,
     });
 
     if (!res.ok) {
       const text = await res.text();
-      return NextResponse.json(
-        { error: "OpenAI error", detail: text },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "OpenAI error", detail: text }, { status: 500 });
     }
 
     const json = await res.json();
-    const imagesB64 = (json.data || []).map((d: any) => d.b64_json);
+    const imagesB64: string[] = (json.data || [])
+      .map((d: any) => d?.b64_json)
+      .filter(Boolean);
 
     const urls: string[] = [];
 
     for (const b64 of imagesB64) {
-      const bytes = b64ToBytes(b64);
-      const filename = `gen_${Date.now()}_${Math.random()
-        .toString(16)
-        .slice(2)}.png`;
+      const buffer = Buffer.from(b64, "base64");
+      const filename = `gen_${Date.now()}_${Math.random().toString(16).slice(2)}.png`;
 
-      const blob = await put(filename, bytes, {
+      // upload blob
+      const stored = await put(filename, buffer, {
         access: "public",
         contentType: "image/png",
       });
 
-      urls.push(blob.url);
+      urls.push(stored.url);
 
-      await sql`INSERT INTO generations (image_url) VALUES (${blob.url});`;
-      await sql`
-        UPDATE counters
-        SET value = value + 1
-        WHERE key = 'total_generations';
-      `;
+      // DB: save + increment
+      await sql`INSERT INTO generations (image_url) VALUES (${stored.url});`;
+      await sql`UPDATE counters SET value = value + 1 WHERE key = 'total_generations';`;
     }
 
     return NextResponse.json({ images: urls });
