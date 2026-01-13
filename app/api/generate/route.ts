@@ -5,6 +5,8 @@ import { put } from "@vercel/blob";
 import { sql } from "@vercel/postgres";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
+
 
 const PROMPT =
   "Add this helmet to the character, keep original pixels untouched except for the helmet overlay. Ensure the helmet fits the head with correct size & angle.";
@@ -36,7 +38,8 @@ export async function POST(req: Request) {
     fd.append("image[]", userImage, "user.png");
     fd.append("image[]", helmetBlob, "helmet.png");
     fd.append("n", String(n));
-    fd.append("size", "auto");
+    fd.append("size", "1024x1024");
+
 
     const res = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
@@ -45,9 +48,14 @@ export async function POST(req: Request) {
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: "OpenAI error", detail: text }, { status: 500 });
-    }
+  const text = await res.text();
+  console.error("OpenAI /images/edits failed:", res.status, text);
+  return NextResponse.json(
+    { error: "OpenAI error", detail: text },
+    { status: 500 }
+  );
+}
+
 
     const json = await res.json();
     const imagesB64: string[] = (json.data || [])
@@ -75,9 +83,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ images: urls });
   } catch (e: any) {
-    return NextResponse.json(
-      { error: "Server error", detail: e?.message ?? String(e) },
-      { status: 500 }
-    );
-  }
+  console.error("GENERATE FAILED:", e);
+  return NextResponse.json(
+    { error: "Server error", detail: e?.message ?? String(e) },
+    { status: 500 }
+  );
+}
+
 }
