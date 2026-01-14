@@ -97,12 +97,17 @@ export default function Home() {
       <div className="mx-auto max-w-6xl px-4 py-10">
         {/* Header */}
         <div className="flex flex-col items-center gap-3">
-          <div className="grid h-16 w-16 place-items-center rounded-3xl bg-white/5 ring-1 ring-white/10 shadow-[0_0_40px_rgba(57,255,20,0.22)]">
-            <span className="text-2xl">🐺</span>
-          </div>
+          <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-3xl bg-white/5 ring-1 ring-white/10 shadow-[0_0_40px_rgba(57,255,20,0.22)]">
+  <img
+    src="/assets/logo.png"
+    alt="PumpfunFloki Helmet"
+    className="h-full w-full object-cover"
+  />
+</div>
+
 
           <h1 className="text-3xl font-semibold tracking-tight">
-            PumpfunFloki <span className="text-[var(--neon-green,#39ff14)]">Helmet</span>
+            Pumpfun Floki <span className="text-[var(--neon-green,#39ff14)]">- The helmet stays on!</span>
           </h1>
 
           {/* Counter */}
@@ -127,7 +132,7 @@ export default function Home() {
         <section className="mt-10 rounded-[28px] border border-[rgba(57,255,20,0.55)] bg-white/5 p-8 shadow-[0_0_60px_rgba(57,255,20,0.12)]">
           <div className="text-center">
             <h2 className="text-4xl font-extrabold text-[var(--neon-green,#39ff14)]">
-              upload ur pfp
+              upload ur pfp to helmetify it.
             </h2>
             <p className="mt-2 text-sm text-white/55">drag & drop or click below</p>
           </div>

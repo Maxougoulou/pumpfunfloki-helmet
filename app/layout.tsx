@@ -12,11 +12,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "PumpfunFloki Helmet",
-  description: "Helmet Try-On",
+  description: "PumpfunFloki Helmet Try-On",
   icons: {
-    icon: "/favicon.png",
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/icon.png", type: "image/png" }],
   },
 };
 
