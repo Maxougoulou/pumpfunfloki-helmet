@@ -77,10 +77,33 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
 
+  // Paste support (Ctrl+V)
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const blob = item.getAsFile();
+          if (blob) setFile(blob);
+          break;
+        }
+      }
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
     setFile(f);
+  }
+
+  function onDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0] ?? null;
+    if (f && f.type.startsWith("image/")) setFile(f);
   }
 
   return (
@@ -129,12 +152,16 @@ export default function Home() {
         </div>
 
         {/* Upload box */}
-        <section className="mt-10 rounded-[28px] border border-[rgba(57,255,20,0.55)] bg-white/5 p-8 shadow-[0_0_60px_rgba(57,255,20,0.12)]">
+        <section
+          className="mt-10 rounded-[28px] border border-[rgba(57,255,20,0.55)] bg-white/5 p-8 shadow-[0_0_60px_rgba(57,255,20,0.12)]"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={onDrop}
+        >
           <div className="text-center">
             <h2 className="text-4xl font-extrabold text-[var(--neon-green,#39ff14)]">
               upload ur pfp to helmetify it.
             </h2>
-            <p className="mt-2 text-sm text-white/55">drag & drop or click below</p>
+            <p className="mt-2 text-sm text-white/55">drag & drop, paste (Ctrl+V), or click below</p>
           </div>
 
           <div className="mt-8 flex flex-col items-center gap-4">
@@ -210,8 +237,22 @@ export default function Home() {
             {/* Results - seulement si on a des images */}
             {images.length > 0 && (
               <div className="mt-6 w-full max-w-3xl rounded-3xl border border-white/10 bg-black/30 p-5">
-                <div className="text-sm font-semibold text-white/70">your results</div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div className="text-sm font-semibold text-white/70">your results</div>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("I just helmeted my PFP! ⚔️🪖\n\nJoin the $PFF Horde 👇\npumpfunfloki.com/helmet\n\n#PFF #PumpFunFloki $PFF")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-extrabold text-black transition hover:scale-[1.03] active:scale-[0.97]"
+                    style={{
+                      background: "#39ff14",
+                      boxShadow: "0 0 20px rgba(57,255,20,0.45)",
+                    }}
+                  >
+                    𝕏 Share on X
+                  </a>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
                   {images.map((url, idx) => (
                     <a
                       key={idx}
