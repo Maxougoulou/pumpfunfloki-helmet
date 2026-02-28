@@ -37,6 +37,30 @@ export default function Home() {
     refreshFeed();
   }, []);
 
+  async function compressImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1024;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => {
+          resolve(new File([blob!], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+        }, "image/jpeg", 0.85);
+      };
+      img.src = url;
+    });
+  }
+
   async function onGenerate(selectedFile: File) {
     if (busy) return;
 
@@ -44,8 +68,9 @@ export default function Home() {
     setImages([]);
 
     try {
+      const compressed = await compressImage(selectedFile);
       const fd = new FormData();
-      fd.append("image", selectedFile);
+      fd.append("image", compressed);
       fd.append("n", "1"); // ✅ toujours 1 gen
 
       const res = await fetch("/api/generate", { method: "POST", body: fd });
@@ -186,7 +211,7 @@ export default function Home() {
               onChange={onPickFile}
             />
 
-            <p className="text-xs text-white/40">jpg, png, webp (max 4mb)</p>
+            <p className="text-xs text-white/40">jpg, png, webp — auto-compressed</p>
 
             {/* Loading animation */}
             <AnimatePresence>
