@@ -25,6 +25,16 @@ export default function Home() {
     setTotalGenerations(Number(json.total ?? 0));
   }
 
+  async function downloadImage(url: string, idx: number) {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `pff-helmet-${idx + 1}.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   async function refreshFeed() {
     const res = await fetch("/api/feed?limit=24", { cache: "no-store" });
     const text = await res.text();
@@ -279,12 +289,9 @@ export default function Home() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {images.map((url, idx) => (
-                    <a
+                    <div
                       key={idx}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group overflow-hidden rounded-2xl border border-white/10 bg-black/40"
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/40"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -292,7 +299,14 @@ export default function Home() {
                         alt={`result-${idx}`}
                         className="h-60 w-full object-cover transition group-hover:scale-[1.02]"
                       />
-                    </a>
+                      <button
+                        onClick={() => downloadImage(url, idx)}
+                        className="absolute bottom-2 right-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white opacity-0 ring-1 ring-white/20 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/90"
+                        title="Download"
+                      >
+                        ⬇ Download
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
